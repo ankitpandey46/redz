@@ -1,8 +1,10 @@
+require("module-alias/register");
 const express = require("express");
 const app = express();
 const cors = require("cors");
 const path = require("path");
-const route = require("./routes/route");
+const userRoute = require("./routes/userRoute");
+const driverRoute = require("./routes/driverRoute");
 // const Cronroute = require("./Cron/CronRoutes/CronRoute")
 
 const expressLayouts = require("express-ejs-layouts");
@@ -43,9 +45,17 @@ app.use(flash());
 
 app.use(express.static(__dirname + "/public"));
 
-app.use("/Api", route);
+app.use("/Api", userRoute);
+app.use("/Api/driver", driverRoute);
 // app.use("/Cron", Cronroute);
 app.use((err, req, res, next) => {
+
+  if (err.stack) {
+    console.error(err.stack);
+  } else {
+    console.error(err);
+  }
+
   let error = { ...err };
   if (error.name === "JsonWebTokenError") {
     err.message = "please login again";
@@ -62,6 +72,16 @@ app.use((err, req, res, next) => {
 });
 
 const http = require("http").createServer(app);
+const io = require("socket.io")(http, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+const { client: redisClient } = require("./Utils/redis");
+require("./Socket/driverSocket")(io, redisClient);
+
 http.listen(process.env.PORT, () =>
   console.log(`Server running on port ${process.env.PORT}`)
 );

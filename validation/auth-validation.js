@@ -50,10 +50,6 @@ const sendOTPSchema = Joi.object({
  * Joi schema for OTP verification
  */
 const verifyOTPSchema = Joi.object({
-    username: Joi.string().required().messages({
-        'string.empty': 'Username is required',
-        'any.required': 'Username is required'
-    }),
     otp: Joi.string().length(6).required().messages({
         'string.length': 'OTP must be exactly 6 digits',
         'string.empty': 'OTP is required',

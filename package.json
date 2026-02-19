@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "keywords": [],
   "author": "",
@@ -25,11 +26,19 @@
     "font-awesome": "^4.7.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.2",
+    "module-alias": "^2.3.4",
     "mongoose": "^9.2.1",
     "multer": "^1.4.5-lts.1",
     "mysql": "^2.18.1",
-    "nodemon": "^1.0.2",
     "path": "^0.12.7",
-    "sharp": "^0.33.5"
+    "redis": "^5.11.0",
+    "sharp": "^0.33.5",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "_moduleAliases": {
+    "@": "."
   }
 }

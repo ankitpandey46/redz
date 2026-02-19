@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const driverSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: [true, 'User ID is required']
+    driverId: {
+        type: String,
+        unique: true,
+        default: () => crypto.randomUUID()
     },
     firstName: {
         type: String,
@@ -15,6 +16,22 @@ const driverSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Last name is required'],
         trim: true
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        lowercase: true,
+        trim: true
+    },
+    phoneNumber: {
+        type: String,
+        required: [true, 'Phone number is required'],
+        unique: true
+    },
+    countryCode: {
+        type: String,
+        required: [true, 'Country code is required']
     },
     nrc: {
         type: String,
@@ -80,59 +97,44 @@ class DriverModel {
     }
 
     static async requestOTP(phoneNumber, countryCode) {
-        const User = mongoose.model('User');
+        const Driver = mongoose.model('Driver');
         const OTP = mongoose.model('OTP');
 
-        const user = await User.findOne({ phoneNumber, countryCode });
-        if (!user) {
-            return { error: "User not found with this phone number and country code" };
-        }
-
-        const driver = await Driver.findOne({ userId: user._id });
+        const driver = await Driver.findOne({ phoneNumber, countryCode });
         if (!driver) {
-            return { error: "Driver profile not found for this user" };
+            return { error: "Driver not found with this phone number and country code" };
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        await OTP.deleteMany({ username: user.username });
+        await OTP.deleteMany({ username: driver.driverId });
 
         const newOTP = new OTP({
-            username: user.username,
+            username: driver.driverId,
             otp: otp
         });
 
         await newOTP.save();
 
-        return { success: true, otp, username: user.username };
+        return { success: true, otp, phoneNumber: driver.phoneNumber };
     }
 
-    static async verifyOTP(username, otp) {
-        const User = mongoose.model('User');
+    static async verifyOTP(otp) {
         const OTP = mongoose.model('OTP');
-
-        const user = await User.findOne({ username });
-        if (!user) {
-            return { error: "User not found" };
-        }
-
-        const otpRecord = await OTP.findOne({ username: username, otp: otp });
+        const otpRecord = await OTP.findOne({ otp: otp });
 
         if (!otpRecord) {
-            const anyOtpRecord = await OTP.findOne({ username: username });
-            if (!anyOtpRecord) {
-                return { error: "otp is expire please resend the otp" };
-            }
-            return { error: "Invalid OTP" };
+            return { error: "Invalid or expired OTP" };
         }
-        await OTP.deleteOne({ _id: otpRecord._id });
 
-        const driver = await Driver.findOne({ userId: user._id });
+        const driver = await Driver.findOne({ phoneNumber: otpRecord.username });
         if (!driver) {
+            await OTP.deleteOne({ _id: otpRecord._id });
             return { error: "Driver profile not found" };
         }
 
-        return { success: true, user: user, driver: driver };
+        await OTP.deleteOne({ _id: otpRecord._id });
+        return { success: true, driver: driver };
     }
 }
 
