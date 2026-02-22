@@ -19,7 +19,7 @@
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^6.19.2",
-    "aws-sdk": "^1.18.0",
+    "aws-sdk": "^2.1693.0",
     "bootstrap": "^5.3.3",
     "connect-flash": "^0.1.1",
     "cookie-parser": "^1.4.7",

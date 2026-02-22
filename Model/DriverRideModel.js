@@ -4,16 +4,16 @@ class DriverRideModel extends BaseModel {
     /**
      * Update or create driver online status
      */
-    static async goOnline(userId, lat, lng) {
+    static async goOnline(driverId, lat, lng) {
         return await super.prisma.driverOnline.upsert({
-            where: { driveruserid: parseInt(userId) },
+            where: { driveruserid: parseInt(driverId) },
             update: {
                 latitude: lat,
                 longitude: lng,
                 driverstatus: true
             },
             create: {
-                driveruserid: parseInt(userId),
+                driveruserid: parseInt(driverId),
                 latitude: lat,
                 longitude: lng,
                 driverstatus: true
@@ -21,9 +21,9 @@ class DriverRideModel extends BaseModel {
         });
     }
 
-    static async goOffline(userId) {
+    static async goOffline(driverId) {
         return await super.prisma.driverOnline.deleteMany({
-            where: { driveruserid: parseInt(userId) }
+            where: { driveruserid: parseInt(driverId) }
         });
     }
 }

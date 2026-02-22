@@ -19,6 +19,12 @@ class DriverModel extends BaseModel {
         });
     }
 
+    static async findById(id) {
+        return await super.prisma.driver.findUnique({
+            where: { id: parseInt(id) }
+        });
+    }
+
     static async requestOTP(phoneNumber, countryCode) {
         const driver = await super.prisma.driver.findUnique({
             where: { phoneNumber }

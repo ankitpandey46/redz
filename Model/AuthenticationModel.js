@@ -90,30 +90,27 @@ class AuthenticationModel extends BaseModel {
         return { member: {} };
     }
 
-    static async verifyOTP(username, otp) {
-        const user = await super.prisma.user.findUnique({
-            where: { username }
-        });
-        if (!user) {
-            return { error: "User not found" };
-        }
+    static async verifyOTP(otp) {
 
         const otpRecord = await super.prisma.oTP.findFirst({
             where: {
-                username: username,
                 otp: otp
             }
         });
 
         if (!otpRecord) {
             const anyOtpRecord = await super.prisma.oTP.findFirst({
-                where: { username: username }
+                where: { otp: otp }
             });
             if (!anyOtpRecord) {
                 return { error: "otp is expire please resend the otp" };
             }
             return { error: "Invalid OTP" };
         }
+
+        const user = await super.prisma.user.findUnique({
+            where: { username: otpRecord.username }
+        });
 
         await super.prisma.oTP.deleteMany({
             where: { id: otpRecord.id }

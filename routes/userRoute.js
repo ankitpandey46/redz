@@ -11,7 +11,6 @@ const AuthenticationController = require('@/Controller/AuthenticationController'
 const UserBookRideController = require('@/Controller/UserBookRideController');
 
 //--------------- Authenication routes--------------------------------
-userRoute.post('/login', upload.none(), AuthenticationController.loginVerify);
 userRoute.post('/signup', upload.any(), AuthenticationController.signup);
 userRoute.post('/send-otp', upload.none(), AuthenticationController.sendOTP);
 userRoute.post('/verify-otp', upload.none(), AuthenticationController.verifyOTP);

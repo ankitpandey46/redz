@@ -2,6 +2,7 @@ const BaseController = require("./BaseController");
 const DriverRideModel = require("@/Model/DriverRideModel");
 const asyncHandler = require('express-async-handler');
 const { locationSchema, searchNearbySchema } = require("../validation/driverRideValidation");
+const DriverModel = require("@/Model/DriverModel");
 
 /**
  * Controller for handling driver ride-related actions
@@ -10,7 +11,7 @@ class DriverRideController extends BaseController {
 
     static DriverOnline = asyncHandler(async (req, res) => {
         const data = req.body;
-        const driverId = req.user.driverId;
+        const driverId = req.user.id;
 
         const { error } = locationSchema.validate(data, { abortEarly: false });
         if (error) {
@@ -28,7 +29,7 @@ class DriverRideController extends BaseController {
         await super.redis.client.geoAdd('drivers:locations', {
             longitude: lng,
             latitude: lat,
-            member: driverId
+            member: driverId.toString()
         });
         return super.sendResponse(res, 200, 'success', 'Driver is now online', {
             driverId,
@@ -38,18 +39,18 @@ class DriverRideController extends BaseController {
     });
 
     static DriverOffline = asyncHandler(async (req, res) => {
-        const driverId = req.user.driverId;
+        const driverId = req.user.id;
         await DriverRideModel.goOffline(driverId);
-        await super.redis.client.zRem('drivers:locations', driverId);
+        await super.redis.client.zRem('drivers:locations', driverId.toString());
         await super.redis.client.del(`driver:${driverId}`);
         return super.sendResponse(res, 200, 'success', 'Driver is now offline');
     });
 
-    static UpdateDriverLocation = asyncHandler(async (lat, lng , driverId) => {
+    static UpdateDriverLocation = asyncHandler(async (lat, lng, driverId) => {
         await super.redis.client.geoAdd('drivers:locations', {
             longitude: lng,
             latitude: lat,
-            member: driverId
+            member: driverId.toString()
         });
         await super.redis.client.hSet(`driver:${driverId}`, {
             latitude: lat,
@@ -60,18 +61,18 @@ class DriverRideController extends BaseController {
 
     static searchNearbyDrivers = asyncHandler(async (pickupLat, pickupLng) => {
         // GEO search within 5km
-        const nearby = await super.redis.client.geoSearch(
+        const nearby = await super.redis.client.geoSearchWith(
             'drivers:locations',
             {
-                longitude: pickupLng,
-                latitude: pickupLat
+                longitude: parseFloat(pickupLng),
+                latitude: parseFloat(pickupLat)
             },
             {
                 radius: 5,
                 unit: 'km'
             },
+            ['WITHDIST'],
             {
-                WITHDIST: true,
                 COUNT: 50
             }
         );
@@ -84,10 +85,12 @@ class DriverRideController extends BaseController {
                 const distance = parseFloat(driver.distance);
                 const driverData = await super.redis.client.hGetAll(`driver:${driverId}`);
                 if (driverData.status === 'Available') {
+                    const fullDriver = await DriverModel.findById(driverId);
                     return {
                         driverId,
                         distance,
-                        eta: Math.ceil(distance * 3) // fake ETA logic
+                        eta: Math.ceil(distance * 3), // fake ETA logic
+                        driverData: fullDriver
                     };
                 }
                 return null;

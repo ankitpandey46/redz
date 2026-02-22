@@ -96,7 +96,7 @@ class DriverAuthController extends BaseController {
 
             const driver = result.driver;
             const token = jwt.sign(
-                { email: driver.email, id: driver._id, driverId: driver.driverId },
+                { email: driver.email, id: driver.id, driverId: driver.driverId },
                 process.env.JWT_SECRET,
                 { expiresIn: "24h" }
             );

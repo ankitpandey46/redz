@@ -4,38 +4,6 @@ const AuthenticationModel = require("../Model/AuthenticationModel");
 const { signupSchema, sendOTPSchema, verifyOTPSchema } = require("../validation/auth-validation");
 
 class AuthenticationController extends BaseController {
-  static async loginVerify(req, res) {
-    const { email, password, loginFrom } = req.body;
-    // return res.status(200).json({loginFrom});
-
-    if (email) {
-      const data = await AuthenticationModel.loginVerify(email, password);
-
-      // return res.status(200).json({data})
-      if (Object.keys(data.member).length > 0) {
-        const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-          expiresIn: "1h",
-        });
-
-        return res.status(200).json({
-          status: "success",
-          token: token,
-          data: data,
-          message: "Login successfull",
-        });
-      } else {
-        return res.status(200).json({
-          status: "error",
-          message: "User Not Found",
-        });
-      }
-    } else {
-      return res.status(200).json({
-        status: "error",
-        message: "Login Failed",
-      });
-    }
-  }
 
   static async signup(req, res) {
     try {
@@ -142,9 +110,9 @@ class AuthenticationController extends BaseController {
         });
       }
 
-      const { username, otp } = data;
+      const { otp } = data;
 
-      const result = await AuthenticationModel.verifyOTP(username, otp);
+      const result = await AuthenticationModel.verifyOTP( otp);
 
       if (result.error) {
         return res.status(200).json({

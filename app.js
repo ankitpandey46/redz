@@ -1,5 +1,4 @@
-require("dotenv").config(); // MUST be first
-
+require("dotenv").config();
 require("module-alias/register");
 
 const express = require("express");

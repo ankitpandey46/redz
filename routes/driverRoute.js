@@ -20,7 +20,7 @@ driverRoute.post('/verify-otp', upload.none(), DriverAuthController.verifyOTP);
 
 //--------------- Driver Ride routes--------------------------------
 driverRoute.post('/go-online', verifyToken, upload.none(), DriverRideController.DriverOnline);
-driverRoute.post('/go-offline', verifyToken, upload.none(), DriverRideController.DriverOffline);
+driverRoute.get('/go-offline', verifyToken, upload.none(), DriverRideController.DriverOffline);
 // driverRoute.get('/get-available-drivers', verifyToken, DriverRideController.getAvailableDrivers);
 
 module.exports = driverRoute;
