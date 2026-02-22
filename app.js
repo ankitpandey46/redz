@@ -1,24 +1,19 @@
+require("dotenv").config(); // MUST be first
+
 require("module-alias/register");
+
 const express = require("express");
-const app = express();
 const cors = require("cors");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const flash = require("connect-flash");
+const http = require("http");
 const path = require("path");
 const userRoute = require("./routes/userRoute");
 const driverRoute = require("./routes/driverRoute");
-// const Cronroute = require("./Cron/CronRoutes/CronRoute")
+const prisma = require("./Utils/db");
 
-const expressLayouts = require("express-ejs-layouts");
-const session = require("express-session");
-const cookieParser = require("cookie-parser");
-const dns = require("dns");
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
-const dotenv = require("dotenv");
-dotenv.config({ path: "./config.env" });
-const connectDB = require("./Utils/db");
-connectDB();
-
-const flash = require("connect-flash");
+const app = express();
 
 app.use(
   cors({
@@ -29,59 +24,73 @@ app.use(
 );
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: "nodedemo",
+    secret: process.env.JWT_SECRET || "nodedemo",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: { secure: false },
   })
 );
 
 app.use(cookieParser());
-
 app.use(flash());
 
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/Api", userRoute);
-app.use("/Api/driver", driverRoute);
-// app.use("/Cron", Cronroute);
+app.use("/api", userRoute);
+app.use("/api/driver", driverRoute);
+
+
 app.use((err, req, res, next) => {
+  console.error(err.stack || err);
 
-  if (err.stack) {
-    console.error(err.stack);
-  } else {
-    console.error(err);
-  }
-
-  let error = { ...err };
-  if (error.name === "JsonWebTokenError") {
-    err.message = "please login again";
-    err.statusCode = 401;
-    return res.status(401).redirect("view/login");
-  }
   err.statusCode = err.statusCode || 500;
-  err.status = err.status || "errors";
+  err.status = err.status || "error";
 
   res.status(err.statusCode).json({
     status: err.status,
-    message: err.message,
+    message: err.message || "Internal Server Error",
   });
 });
 
-const http = require("http").createServer(app);
-const io = require("socket.io")(http, {
+const server = http.createServer(app);
+
+const io = require("socket.io")(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
-const { client: redisClient } = require("./Utils/redis");
-require("./Socket/driverSocket")(io, redisClient);
+// Redis (optional)
+try {
+  const { client: redisClient } = require("./Utils/redis");
+  require("./Socket/driverSocket")(io, redisClient);
+} catch (err) {
+  console.log("Redis or Socket not configured");
+}
 
-http.listen(process.env.PORT, () =>
-  console.log(`Server running on port ${process.env.PORT}`)
-);
+  //  START SERVER
+
+const PORT = process.env.PORT || 8086;
+
+const startServer = async () => {
+  try {
+    // Connect Database
+    await prisma.$connect();
+    console.log("Database connected");
+
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+};
+
+startServer();

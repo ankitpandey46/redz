@@ -119,3 +119,5 @@ public
 /generated/prisma
 .env
 config.env
+
+/generated/prisma

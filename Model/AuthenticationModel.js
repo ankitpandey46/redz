@@ -1,86 +1,20 @@
-const mongoose = require('mongoose');
+const BaseModel = require("./BaseModel");
 
-const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        unique: true,
-        trim: true
-    },
-    firstName: {
-        type: String,
-        required: [true, 'First name is required'],
-        trim: true
-    },
-    lastName: {
-        type: String,
-        required: [true, 'Last name is required'],
-        trim: true
-    },
-    email: {
-        type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        lowercase: true,
-        trim: true
-    },
-    phoneNumber: {
-        type: String,
-        required: [true, 'Phone number is required'],
-        unique: true
-    },
-    countryCode: {
-        type: String,
-        required: [true, 'Country code is required']
-    }
-}, {
-    timestamps: true
-});
-
-const User = mongoose.model('User', userSchema);
-
-// Drop legacy index if it exists to resolve duplicate key error
-User.collection.dropIndex("mobileNumber_1").catch(err => {
-    if (err.codeName !== 'IndexNotFound') {
-        console.log("Note: mobileNumber_1 index cleanup -", err.message);
-    }
-});
-
-const otpSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true
-    },
-    otp: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-        index: { expires: '60s' }
-    }
-});
-
-const OTP = mongoose.model('OTP', otpSchema);
-
-const errorLogSchema = new mongoose.Schema({
-    message: String,
-    type: String,
-    details: mongoose.Schema.Types.Mixed,
-    timestamp: { type: Date, default: Date.now }
-});
-
-const ErrorLog = mongoose.model('ErrorLog', errorLogSchema);
-
-class AuthenticationModel {
+class AuthenticationModel extends BaseModel {
     static async logError(errorData) {
         try {
-            const log = new ErrorLog(errorData);
-            await log.save();
+            await super.prisma.errorLog.create({
+                data: {
+                    message: errorData.message,
+                    type: errorData.type,
+                    details: errorData.details
+                }
+            });
         } catch (err) {
             console.error('Failed to save error log:', err);
         }
     }
+
     static async signup(data) {
         let { username, firstName, lastName, email, phoneNumber, countryCode } = data;
 
@@ -89,8 +23,14 @@ class AuthenticationModel {
             username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}_${randomDigits}`;
         }
 
-        const existingUser = await User.findOne({
-            $or: [{ phoneNumber }, { email }, { username }]
+        const existingUser = await super.prisma.user.findFirst({
+            where: {
+                OR: [
+                    { phoneNumber },
+                    { email },
+                    { username }
+                ]
+            }
         });
 
         if (existingUser) {
@@ -99,42 +39,51 @@ class AuthenticationModel {
             if (existingUser.username === username) return { error: "Username already exists" };
         }
 
-        const newUser = new User({
-            username,
-            firstName,
-            lastName,
-            email,
-            phoneNumber,
-            countryCode
+        const newUser = await super.prisma.user.create({
+            data: {
+                username,
+                firstName,
+                lastName,
+                email,
+                phoneNumber,
+                countryCode
+            }
         });
 
-        await newUser.save();
         return { success: true, user: newUser };
     }
 
     static async requestOTP(phoneNumber, countryCode) {
+        const user = await super.prisma.user.findUnique({
+            where: {
+                phoneNumber: phoneNumber // Note: This assumes phoneNumber is unique in the DB
+            }
+        });
 
-        const user = await User.findOne({ phoneNumber, countryCode });
-        if (!user) {
+        if (!user || user.countryCode !== countryCode) {
             return { error: "User not found with this phone number and country code" };
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        await OTP.deleteMany({ username: user.username });
-
-        const newOTP = new OTP({
-            username: user.username,
-            otp: otp
+        await super.prisma.oTP.deleteMany({
+            where: { username: user.username }
         });
 
-        await newOTP.save();
+        await super.prisma.oTP.create({
+            data: {
+                username: user.username,
+                otp: otp
+            }
+        });
 
         return { success: true, otp, username: user.username };
     }
 
     static async loginVerify(email, password) {
-        const user = await User.findOne({ email });
+        const user = await super.prisma.user.findUnique({
+            where: { email }
+        });
         if (user) {
             return { member: user };
         }
@@ -142,21 +91,33 @@ class AuthenticationModel {
     }
 
     static async verifyOTP(username, otp) {
-        const user = await User.findOne({ username });
+        const user = await super.prisma.user.findUnique({
+            where: { username }
+        });
         if (!user) {
             return { error: "User not found" };
         }
 
-        const otpRecord = await OTP.findOne({ username: username, otp: otp });
+        const otpRecord = await super.prisma.oTP.findFirst({
+            where: {
+                username: username,
+                otp: otp
+            }
+        });
 
         if (!otpRecord) {
-            const anyOtpRecord = await OTP.findOne({ username: username });
+            const anyOtpRecord = await super.prisma.oTP.findFirst({
+                where: { username: username }
+            });
             if (!anyOtpRecord) {
                 return { error: "otp is expire please resend the otp" };
             }
             return { error: "Invalid OTP" };
         }
-        await OTP.deleteOne({ _id: otpRecord._id });
+
+        await super.prisma.oTP.deleteMany({
+            where: { id: otpRecord.id }
+        });
 
         return { success: true, user: user };
     }

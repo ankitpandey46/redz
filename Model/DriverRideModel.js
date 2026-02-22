@@ -1,50 +1,30 @@
-const mongoose = require('mongoose');
+const BaseModel = require('./BaseModel');
 
-const driverOnlineSchema = new mongoose.Schema({
-    driveruserid: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-        unique: true
-    },
-    latitude: {
-        type: Number,
-        required: true
-    },
-    longitude: {
-        type: Number,
-        required: true
-    },
-    driverstatus: {
-        type: Boolean,
-        default: false
-    }
-}, {
-    timestamps: true
-});
-
-const DriverOnline = mongoose.model('driveronline', driverOnlineSchema);
-
-class DriverRideModel {
+class DriverRideModel extends BaseModel {
     /**
      * Update or create driver online status
      */
     static async goOnline(userId, lat, lng) {
-        return await DriverOnline.findOneAndUpdate(
-            { driveruserid: userId },
-            {
+        return await super.prisma.driverOnline.upsert({
+            where: { driveruserid: parseInt(userId) },
+            update: {
                 latitude: lat,
                 longitude: lng,
                 driverstatus: true
             },
-            { upsert: true, new: true }
-        );
+            create: {
+                driveruserid: parseInt(userId),
+                latitude: lat,
+                longitude: lng,
+                driverstatus: true
+            }
+        });
     }
 
     static async goOffline(userId) {
-        return await DriverOnline.deleteOne(
-            { driveruserid: userId }
-        );
+        return await super.prisma.driverOnline.deleteMany({
+            where: { driveruserid: parseInt(userId) }
+        });
     }
 }
 
