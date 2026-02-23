@@ -70,3 +70,20 @@ model DriverOnline {
 
   user           User     @relation(fields: [driveruserid], references: [id])
 }
+
+model BookRide {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  driverId  Int
+  pickupLat Float
+  pickupLng Float
+  dropLat   Float
+  dropLng   Float
+  status      String   @default("REQUESTED") // REQUESTED, ACCEPTED, COMPLETED, CANCELLED
+  cancelledBy String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  driver    Driver   @relation(fields: [driverId], references: [id])
+}

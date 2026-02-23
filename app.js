@@ -63,22 +63,20 @@ const io = require("socket.io")(server, {
     methods: ["GET", "POST"],
   },
 });
+global.io = io;
 
-// Redis (optional)
 try {
   const { client: redisClient } = require("./Utils/redis");
   require("./Socket/driverSocket")(io, redisClient);
+  require("./Socket/userSocket")(io, redisClient);
 } catch (err) {
   console.log("Redis or Socket not configured");
 }
-
-  //  START SERVER
 
 const PORT = process.env.PORT || 8086;
 
 const startServer = async () => {
   try {
-    // Connect Database
     await prisma.$connect();
     console.log("Database connected");
 

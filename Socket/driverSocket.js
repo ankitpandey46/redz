@@ -24,6 +24,7 @@ module.exports = (io, redis) => {
 
         await redis.hSet(`driver:${driverId}`, {
             socketId: socket.id,
+            driverId: driverId,
             status: "Online"
         });
 
