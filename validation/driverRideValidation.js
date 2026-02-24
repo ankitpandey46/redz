@@ -25,6 +25,12 @@ const searchNearbySchema = Joi.object({
     pickupLng: Joi.number().required().messages({
         'number.base': 'Pickup longitude must be a number',
         'any.required': 'Pickup longitude is required'
+    }),
+    dropLat: Joi.number().optional().messages({
+        'number.base': 'Drop latitude must be a number'
+    }),
+    dropLng: Joi.number().optional().messages({
+        'number.base': 'Drop longitude must be a number'
     })
 });
 

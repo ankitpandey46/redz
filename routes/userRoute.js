@@ -17,7 +17,7 @@ userRoute.post('/verify-otp', upload.none(), AuthenticationController.verifyOTP)
 
 userRoute.post('/request-ride', verifyToken, upload.none(), UserBookRideController.requestRide);
 userRoute.post('/book-ride', verifyToken, upload.none(), UserBookRideController.bookRide);
-userRoute.post('/cancel-ride', verifyToken, upload.none(), UserBookRideController.cancelRide);
+userRoute.get('/my-rides', verifyToken, UserBookRideController.getMyRides);
 
 
 

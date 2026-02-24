@@ -1,20 +1,31 @@
 const BaseController = require("./BaseController");
 const DriverRideController = require('@/Controller/DriverRideController')
 const asyncHandler = require('express-async-handler');
+const DriverModel = require("@/Model/DriverModel");
 
 const BookRideModel = require("@/Model/BookRideModel");
-const { requestRideSchema, cancelRideSchema } = require("../validation/driverRideValidation");
+const { requestRideSchema: userRequestRideSchema } = require("../validation/userBookValidation");
+const { requestRideSchema: driverRequestRideSchema, cancelRideSchema } = require("../validation/driverRideValidation");
 
 class UserBookRideController extends BaseController {
 
     static requestRide = asyncHandler(async (req, res) => {
-        const { pickupLat, pickupLng } = req.body;
-        const driverData = await DriverRideController.searchNearbyDrivers(pickupLat, pickupLng);
-        console.log(driverData);
-        if (driverData.length > 0) {
-            return super.sendResponse(res, 200, 'success', 'Driver available near you', driverData);
+        const data = req.body;
+
+        const { error } = userRequestRideSchema.validate(data, { abortEarly: false });
+        if (error) {
+            const combinedMessage = error.details.map(detail => detail.message).join(", ");
+            return super.sendResponse(res, 400, 'error', combinedMessage);
+        }
+
+        const { pickupLat, pickupLng, dropLat, dropLng } = data;
+
+        const drivers = await DriverRideController.searchNearbyDrivers(pickupLat, pickupLng, dropLat, dropLng);
+
+        if (drivers.length > 0) {
+            return super.sendResponse(res, 200, 'success', 'Drivers available near you', { data: drivers });
         } else {
-            return super.sendResponse(res, 200, 'success', 'No Driver available near you');
+            return super.sendResponse(res, 200, 'success', 'No drivers available near you');
         }
     });
 
@@ -22,7 +33,7 @@ class UserBookRideController extends BaseController {
         const data = req.body;
         const userId = req.user.id;
 
-        const { error } = requestRideSchema.validate(data, { abortEarly: false });
+        const { error } = driverRequestRideSchema.validate(data, { abortEarly: false });
         if (error) {
             const combinedMessage = error.details.map(detail => detail.message).join(", ");
             return super.sendResponse(res, 400, 'error', combinedMessage);
@@ -30,22 +41,50 @@ class UserBookRideController extends BaseController {
 
         const { driverId, pickupLat, pickupLng, dropLat, dropLng } = data;
 
-        const driverData = await super.redis.client.hGetAll(`driver:${driverId}`);
-        if (!driverData || driverData.status !== 'Available') {
+        const driverRedisData = await super.redis.client.hGetAll(`driver:${driverId}`);
+        if (!driverRedisData || driverRedisData.status !== 'AVAILABLE') {
             return super.sendResponse(res, 404, 'error', 'Driver is not available');
         }
 
+        // 1. Calculate distances and fare
+        const tripDistanceKm = parseFloat(DriverRideController.calculateDistanceKm(
+            parseFloat(pickupLat),
+            parseFloat(pickupLng),
+            parseFloat(dropLat),
+            parseFloat(dropLng)
+        ).toFixed(2));
+
+        const driverDistanceKm = parseFloat(DriverRideController.calculateDistanceKm(
+            parseFloat(driverRedisData.latitude),
+            parseFloat(driverRedisData.longitude),
+            parseFloat(pickupLat),
+            parseFloat(pickupLng)
+        ).toFixed(2));
+
+        const baseFare = 2;
+        const perKmRate = 3;
+        const amount = Number((baseFare + tripDistanceKm * perKmRate).toFixed(2));
+        const currency = "USD";
+
+        // 2. Create Ride Record
         const ride = await BookRideModel.createRide({
             userId,
-            driverId,
-            pickupLat,
-            pickupLng,
-            dropLat,
-            dropLng,
+            driverId: parseInt(driverId),
+            pickupLat: parseFloat(pickupLat),
+            pickupLng: parseFloat(pickupLng),
+            dropLat: parseFloat(dropLat),
+            dropLng: parseFloat(dropLng),
+            amount,
+            currency,
             status: "REQUESTED"
         });
 
-        const socketId = driverData.socketId;
+        // 3. Update Driver Status to 'Booked' (DB & Redis)
+        await DriverModel.updateStatus(driverId, 'REQUESTED');
+        await super.redis.client.hSet(`driver:${driverId}`, 'status', 'REQUESTED');
+        await super.redis.client.zRem('drivers:locations', driverId.toString());
+
+        const socketId = driverRedisData.socketId;
         if (socketId && global.io) {
             global.io.to(socketId).emit('newRideRequest', {
                 rideId: ride.id,
@@ -54,51 +93,44 @@ class UserBookRideController extends BaseController {
                 pickupLng,
                 dropLat,
                 dropLng,
+                driverDistance: `${driverDistanceKm} km`,
+                tripDistance: `${tripDistanceKm} km`,
+                amount,
+                currency,
+                eta: `${Math.ceil(driverDistanceKm * 2)} mins`,
                 status: "REQUESTED",
                 message: "You have a new ride request!"
             });
         }
 
-        return super.sendResponse(res, 200, 'success', 'Ride requested successfully', { ride });
+        return super.sendResponse(res, 200, 'success', 'Ride requested successfully', {
+            ride: {
+                ...ride,
+                rideId: ride.id
+            },
+            metadata: {
+                driverDistance: `${driverDistanceKm} km`,
+                tripDistance: `${tripDistanceKm} km`,
+                amount,
+                currency,
+                eta: `${Math.ceil(driverDistanceKm * 2)} mins`
+            }
+        });
     });
 
-    static cancelRide = asyncHandler(async (req, res) => {
-        const data = req.body;
+    static getMyRides = asyncHandler(async (req, res) => {
         const userId = req.user.id;
+        const rides = await BookRideModel.getRidesByUserId(userId);
 
-        const { error } = cancelRideSchema.validate(data, { abortEarly: false });
-        if (error) {
-            const combinedMessage = error.details.map(detail => detail.message).join(", ");
-            return super.sendResponse(res, 400, 'error', combinedMessage);
-        }
+        const groupedRides = rides.reduce((acc, ride) => {
+            const status = ride.status.toLowerCase();
+            const rideWithId = { ...ride, rideId: ride.id };
+            if (!acc[status]) acc[status] = [];
+            acc[status].push(rideWithId);
+            return acc;
+        }, { requested: [], booked: [], completed: [], cancelled: [] });
 
-        const { rideId, cancelledBy } = data;
-
-        const ride = await BookRideModel.getRideById(rideId);
-        if (!ride) {
-            return super.sendResponse(res, 404, 'error', 'Ride record not found');
-        }
-
-        if (ride.userId !== userId) {
-            return super.sendResponse(res, 403, 'error', 'You cannot cancel a ride that is not yours');
-        }
-        if (ride.status === 'CANCELLED' || ride.status === 'COMPLETED') {
-            return super.sendResponse(res, 400, 'error', `Ride is already ${ride.status.toLowerCase()}`);
-        }
-
-        const cancelledRide = await BookRideModel.cancelRide(rideId, cancelledBy);
-
-        const driverData = await super.redis.client.hGetAll(`driver:${ride.driverId}`);
-        if (driverData && driverData.socketId && global.io) {
-            global.io.to(driverData.socketId).emit('rideCancelled', {
-                rideId: rideId,
-                status: "CANCELLED",
-                cancelledBy: cancelledBy,
-                message: "The ride has been cancelled."
-            });
-        }
-
-        return super.sendResponse(res, 200, 'success', 'Ride cancelled successfully', { ride: cancelledRide });
+        return super.sendResponse(res, 200, 'success', 'Rides fetched successfully', { data: groupedRides });
     });
 
 }

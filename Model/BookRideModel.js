@@ -2,9 +2,16 @@ const BaseModel = require('./BaseModel');
 
 class BookRideModel extends BaseModel {
     static async createRide(data) {
-        return await super.prisma.bookRide.create({
+        const ride = await super.prisma.bookRide.create({
             data: data
         });
+        const rideData = await super.prisma.bookRide.findUnique({
+            where: { id: parseInt(ride.id) },
+            include: {
+                driver: true
+            }
+        });
+        return rideData;
     }
 
     static async getRideById(id) {
@@ -13,6 +20,30 @@ class BookRideModel extends BaseModel {
             include: {
                 user: true,
                 driver: true
+            }
+        });
+    }
+
+    static async getRidesByUserId(userId) {
+        return await super.prisma.bookRide.findMany({
+            where: { userId: parseInt(userId) },
+            include: {
+                driver: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+    }
+
+    static async getRidesByDriverId(driverId) {
+        return await super.prisma.bookRide.findMany({
+            where: { driverId: parseInt(driverId) },
+            include: {
+                user: true
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
     }
@@ -30,6 +61,10 @@ class BookRideModel extends BaseModel {
             data: {
                 status: 'CANCELLED',
                 cancelledBy: cancelledBy
+            },
+            include: {
+                user: true,
+                driver: true
             }
         });
     }
@@ -38,7 +73,11 @@ class BookRideModel extends BaseModel {
         return await super.prisma.bookRide.update({
             where: { id: parseInt(id) },
             data: {
-                status: 'ACCEPTED'
+                status: 'BOOKED'
+            },
+            include: {
+                user: true,
+                driver: true
             }
         });
     }
@@ -48,6 +87,10 @@ class BookRideModel extends BaseModel {
             where: { id: parseInt(id) },
             data: {
                 status: 'COMPLETED'
+            },
+            include: {
+                user: true,
+                driver: true
             }
         });
     }

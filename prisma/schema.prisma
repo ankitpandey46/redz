@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  firstName    String
-  lastName     String
-  email        String   @unique
-  phoneNumber  String   @unique
-  countryCode  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  id          Int      @id @default(autoincrement())
+  username    String   @unique
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phoneNumber String   @unique
+  countryCode String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   driverOnline DriverOnline?
+  bookRides    BookRide[]
 }
 
 model OTP {
@@ -26,7 +27,7 @@ model OTP {
   username  String
   otp       String
   createdAt DateTime @default(now())
-  
+
   @@index([username])
 }
 
@@ -39,12 +40,12 @@ model ErrorLog {
 }
 
 model Driver {
-  id                   Int      @id @default(autoincrement())
-  driverId             String   @unique @default(uuid())
+  id                   Int        @id @default(autoincrement())
+  driverId             String     @unique @default(uuid())
   firstName            String
   lastName             String
-  email                String   @unique
-  phoneNumber          String   @unique
+  email                String     @unique
+  phoneNumber          String     @unique
   countryCode          String
   nrc                  String
   nrcImage             String
@@ -54,36 +55,39 @@ model Driver {
   vehicleModel         String
   vehiclePlate         String
   vehicleColor         String
-  status               String   @default("pending")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  status               String     @default("pending")
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  bookRides            BookRide[]
 }
 
 model DriverOnline {
-  id             Int      @id @default(autoincrement())
-  driveruserid   Int      @unique
-  latitude       Float
-  longitude      Float
-  driverstatus   Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  driveruserid Int      @unique
+  latitude     Float
+  longitude    Float
+  driverstatus Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user           User     @relation(fields: [driveruserid], references: [id])
+  user User @relation(fields: [driveruserid], references: [id])
 }
 
 model BookRide {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  driverId  Int
-  pickupLat Float
-  pickupLng Float
-  dropLat   Float
-  dropLng   Float
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  driverId    Int
+  pickupLat   Float
+  pickupLng   Float
+  dropLat     Float
+  dropLng     Float
   status      String   @default("REQUESTED") // REQUESTED, ACCEPTED, COMPLETED, CANCELLED
   cancelledBy String?
+  amount      Float?
+  currency    String?  @default("USD")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id])
-  driver    Driver   @relation(fields: [driverId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
 }

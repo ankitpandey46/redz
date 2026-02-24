@@ -8,14 +8,14 @@ class DriverRideModel extends BaseModel {
         return await super.prisma.driverOnline.upsert({
             where: { driveruserid: parseInt(driverId) },
             update: {
-                latitude: lat,
-                longitude: lng,
+                latitude: parseFloat(lat),
+                longitude: parseFloat(lng),
                 driverstatus: true
             },
             create: {
                 driveruserid: parseInt(driverId),
-                latitude: lat,
-                longitude: lng,
+                latitude: parseFloat(lat),
+                longitude: parseFloat(lng),
                 driverstatus: true
             }
         });

@@ -10,6 +10,7 @@ const http = require("http");
 const path = require("path");
 const userRoute = require("./routes/userRoute");
 const driverRoute = require("./routes/driverRoute");
+const bookingRoute = require("./routes/bookingRoute");
 const prisma = require("./Utils/db");
 
 const app = express();
@@ -41,6 +42,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api", userRoute);
 app.use("/api/driver", driverRoute);
+app.use("/api/booking", bookingRoute);
 
 
 app.use((err, req, res, next) => {

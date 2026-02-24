@@ -1,0 +1,70 @@
+const BaseController = require("@/Controller/BaseController");
+const BookRideModel = require("@/Model/BookRideModel");
+const DriverModel = require("@/Model/DriverModel");
+const asyncHandler = require('express-async-handler');
+const { cancelRideSchema } = require("../validation/userBookValidation");
+
+class BookingController extends BaseController {
+    static cancelRide = asyncHandler(async (req, res) => {
+        const data = req.body;
+        const loggedInId = req.user.id;
+
+        const { error } = cancelRideSchema.validate(data, { abortEarly: false });
+        if (error) {
+            const combinedMessage = error.details.map(detail => detail.message).join(", ");
+            return super.sendResponse(res, 400, 'error', combinedMessage);
+        }
+
+        const { rideId, cancelledBy } = data;
+
+        const ride = await BookRideModel.getRideById(rideId);
+        if (!ride) {
+            return super.sendResponse(res, 404, 'error', 'Ride record not found');
+        }
+
+        const isUserCancel = ride.userId === loggedInId && cancelledBy === 'USER';
+        const isDriverCancel = ride.driverId === loggedInId && cancelledBy === 'DRIVER';
+
+        if (!isUserCancel && !isDriverCancel) {
+            return super.sendResponse(res, 403, 'error', 'You are not authorized to cancel this ride');
+        }
+
+        if (ride.status === 'CANCELLED' || ride.status === 'COMPLETED') {
+            return super.sendResponse(res, 400, 'error', `Ride is already ${ride.status.toLowerCase()}`);
+        }
+
+        const cancelledRide = await BookRideModel.cancelRide(rideId, cancelledBy);
+
+        if (cancelledBy === 'USER') {
+            const driverData = await super.redis.client.hGetAll(`driver:${ride.driverId}`);
+            if (driverData && driverData.socketId && global.io) {
+                global.io.of("/driver").to(driverData.socketId).emit('rideCancelled', {
+                    rideId: rideId,
+                    message: `Ride ${rideId} has been cancelled by the user.`
+                });
+            }
+        } else {
+            const userData = await super.redis.client.hGetAll(`user:${ride.userId}`);
+            if (userData && userData.socketId && global.io) {
+                global.io.of("/user").to(userData.socketId).emit('rideCancelled', {
+                    rideId: rideId,
+                    message: `Your ride ${rideId} has been cancelled by the driver.`
+                });
+            }
+        }
+
+        await DriverModel.updateStatus(ride.driverId, 'AVAILABLE');
+        await super.redis.client.hSet(`driver:${ride.driverId}`, 'status', 'AVAILABLE');
+        await super.redis.client.geoAdd('drivers:locations', [
+            {
+                longitude: ride.pickupLng,
+                latitude: ride.pickupLat,
+                member: ride.driverId.toString()
+            }
+        ]);
+
+        return super.sendResponse(res, 200, 'success', 'Ride cancelled successfully', { ride: cancelledRide });
+    });
+}
+
+module.exports = BookingController;
