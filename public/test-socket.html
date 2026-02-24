@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Panel</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            margin: 20px;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .logs {
+            background: #1e1e1e;
+            color: #00ff00;
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 13px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .connected {
+            color: #28a745;
+        }
+
+        .disconnected {
+            color: #dc3545;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+
+        .btn-user {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-driver {
+            background: #6f42c1;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🚀 WebSocket Testing Hub</h1>
+    <div class="container">
+        <div class="panel">
+            <h2>👤 User Panel (ID: 1)</h2>
+            <div id="userStatus" class="status disconnected">Status: Disconnected</div>
+            <div class="controls">
+                <button class="btn-user" onclick="connectUser()">Connect /user</button>
+            </div>
+            <div id="userLogs" class="logs"></div>
+        </div>
+        <div class="panel">
+            <h2>🚗 Driver Panel (ID: 1)</h2>
+            <div id="driverStatus" class="status disconnected">Status: Disconnected</div>
+            <div class="controls">
+                <button class="btn-driver" onclick="connectDriver()">Connect Driver</button>
+                <button class="btn-driver" onclick="updateLocation()">Update Location</button>
+            </div>
+            <div id="driverLogs" class="logs"></div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        const USER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzcxOTQ3OTQwLCJleHAiOjE4MDM1MDU1NDB9.TUX8UYS02DL8SSF5iE7tg3CXppurkNfoJ2nPyxe4Jkk";
+        const DRIVER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJkcml2ZXJAdGVzdC5jb20iLCJpYXQiOjE3NzE5NDc5NDAsImV4cCI6MTgwMzUwNTU0MH0.d3i4vOTQV9NfJ3fpBIsFq1eWiIBg1pfts-5oAhWNz_A";
+        const SERVER_URL = "http://localhost:8086";
+
+        let userSocket, driverSocket;
+
+        function log(containerId, message, data = null) {
+            const container = document.getElementById(containerId);
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = '<span class="timestamp">[' + time + ']</span> ' + message;
+            if (data) {
+                const pre = document.createElement('pre');
+                pre.style.margin = '5px 0 0 0';
+                pre.innerText = JSON.stringify(data, null, 2);
+                entry.appendChild(pre);
+            }
+            container.prepend(entry);
+        }
+
+        function connectUser() {
+            if (userSocket) userSocket.close();
+            log('userLogs', 'Connecting to /user namespace...');
+            userSocket = io(SERVER_URL + "/user", {
+                auth: { token: USER_TOKEN }
+            });
+
+            userSocket.on('connect', () => {
+                document.getElementById('userStatus').innerText = 'Status: Connected';
+                document.getElementById('userStatus').className = 'status connected';
+                log('userLogs', '✅ Connected to /user');
+            });
+
+            userSocket.on('disconnect', () => {
+                document.getElementById('userStatus').innerText = 'Status: Disconnected';
+                document.getElementById('userStatus').className = 'status disconnected';
+                log('userLogs', '❌ Disconnected');
+            });
+
+            userSocket.on('rideAccepted', (data) => log('userLogs', '🔔 Ride Accepted', data));
+            userSocket.on('rideCompleted', (data) => log('userLogs', '🔔 Ride Completed', data));
+            userSocket.on('rideCancelled', (data) => log('userLogs', '🔔 Ride Cancelled', data));
+            userSocket.on('error', (err) => log('userLogs', '⚠️ Error', err));
+            userSocket.on('connect_error', (err) => log('userLogs', '⚠️ Connect Error', err.message));
+        }
+
+        function connectDriver() {
+            if (driverSocket) driverSocket.close();
+            log('driverLogs', 'Connecting to root namespace...');
+            driverSocket = io(SERVER_URL, {
+                auth: { token: DRIVER_TOKEN }
+            });
+
+            driverSocket.on('connect', () => {
+                document.getElementById('driverStatus').innerText = 'Status: Connected';
+                document.getElementById('driverStatus').className = 'status connected';
+                log('driverLogs', '✅ Connected to Driver namespace');
+            });
+
+            driverSocket.on('disconnect', () => {
+                document.getElementById('driverStatus').innerText = 'Status: Disconnected';
+                document.getElementById('driverStatus').className = 'status disconnected';
+                log('driverLogs', '❌ Disconnected');
+            });
+
+            driverSocket.on('newRideRequest', (data) => log('driverLogs', '🔔 New Ride Request', data));
+            driverSocket.on('rideCancelled', (data) => log('driverLogs', '🔔 Ride Cancelled', data));
+            driverSocket.on('locationUpdated', (data) => log('driverLogs', '🔔 Location Updated', data));
+            driverSocket.on('error', (err) => log('driverLogs', '⚠️ Error', err));
+            driverSocket.on('connect_error', (err) => log('driverLogs', '⚠️ Connect Error', err.message));
+        }
+
+        function updateLocation() {
+            if (!driverSocket || !driverSocket.connected) {
+                alert('Driver not connected!');
+                return;
+            }
+            const data = {
+                lat: 22.7196 + (Math.random() - 0.5) * 0.01,
+                lng: 75.8577 + (Math.random() - 0.5) * 0.01,
+                driverId: 1
+            };
+            log('driverLogs', '📤 Sending updateLocation', data);
+            driverSocket.emit('updateLocation', data);
+        }
+    </script>
+</body>
+
+</html>

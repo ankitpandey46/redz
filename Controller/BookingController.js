@@ -38,7 +38,7 @@ class BookingController extends BaseController {
         if (cancelledBy === 'USER') {
             const driverData = await super.redis.client.hGetAll(`driver:${ride.driverId}`);
             if (driverData && driverData.socketId && global.io) {
-                global.io.of("/driver").to(driverData.socketId).emit('rideCancelled', {
+                global.io.to(driverData.socketId).emit('rideCancelled', {
                     rideId: rideId,
                     message: `Ride ${rideId} has been cancelled by the user.`
                 });

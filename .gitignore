@@ -98,7 +98,7 @@ dist
 # Gatsby files
 .cache/
 # Comment the line below if you want to check your dist folder into your repository
-public
+
 
 # Serverless directories
 .serverless/
