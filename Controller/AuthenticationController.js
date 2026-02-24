@@ -112,7 +112,7 @@ class AuthenticationController extends BaseController {
 
       const { otp } = data;
 
-      const result = await AuthenticationModel.verifyOTP( otp);
+      const result = await AuthenticationModel.verifyOTP(otp);
 
       if (result.error) {
         return res.status(200).json({
@@ -122,7 +122,7 @@ class AuthenticationController extends BaseController {
       }
 
       const user = result.user;
-      const token = jwt.sign({ email: user.email, id: user._id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ email: user.email, id: user.id }, process.env.JWT_SECRET, {
         expiresIn: "24h",
       });
 

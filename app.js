@@ -72,7 +72,7 @@ try {
   require("./Socket/driverSocket")(io, redisClient);
   require("./Socket/userSocket")(io, redisClient);
 } catch (err) {
-  console.log("Redis or Socket not configured");
+  console.log("Redis or Socket configuration error:", err.message);
 }
 
 const PORT = process.env.PORT || 8086;

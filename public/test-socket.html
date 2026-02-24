@@ -124,12 +124,14 @@
         </div>
     </div>
 
-    
+
 
     <script>
-        const USER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzcxOTQ3OTQwLCJleHAiOjE4MDM1MDU1NDB9.TUX8UYS02DL8SSF5iE7tg3CXppurkNfoJ2nPyxe4Jkk";
-        const DRIVER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJkcml2ZXJAdGVzdC5jb20iLCJpYXQiOjE3NzE5NDc5NDAsImV4cCI6MTgwMzUwNTU0MH0.d3i4vOTQV9NfJ3fpBIsFq1eWiIBg1pfts-5oAhWNz_A";
+        const USER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG8yMWVAZXhhbXBsZS5jb20iLCJpZCI6NCwiaWF0IjoxNzcxOTYzODY3LCJleHAiOjE3NzIwNTAyNjd9.28PMi4E7bGOg7RyPc47sjkY4pH-HUr9JQ1BQU13wJRw";
+        const DRIVER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWQiOjEsImRyaXZlcklkIjoiNjdjY2FkZjItNGU0Yi00YjUwLTg2NzUtMjhkYjAwYWQ1Y2FiIiwiaWF0IjoxNzcxOTU5MTgwLCJleHAiOjE3NzIwNDU1ODB9.ycEvzhKlYRKYcs2fiKRHfmTcwYGEMj20pfp0z2OMcBc";
         const SERVER_URL = "http://localhost:8086";
+        const userId = 4;
+        const driverId = 1;
 
         let userSocket, driverSocket;
 
@@ -171,7 +173,11 @@
             userSocket.on('rideCompleted', (data) => log('userLogs', '🔔 Ride Completed', data));
             userSocket.on('rideCancelled', (data) => log('userLogs', '🔔 Ride Cancelled', data));
             userSocket.on('error', (err) => log('userLogs', '⚠️ Error', err));
-            userSocket.on('connect_error', (err) => log('userLogs', '⚠️ Connect Error', err.message));
+            userSocket.on('connect_error', (err) => {
+                log('userLogs', '⚠️ Connect Error', err.message);
+                document.getElementById('userStatus').innerText = 'Error: ' + err.message;
+                document.getElementById('userStatus').className = 'status disconnected';
+            });
         }
 
         function connectDriver() {
@@ -197,7 +203,11 @@
             driverSocket.on('rideCancelled', (data) => log('driverLogs', '🔔 Ride Cancelled', data));
             driverSocket.on('locationUpdated', (data) => log('driverLogs', '🔔 Location Updated', data));
             driverSocket.on('error', (err) => log('driverLogs', '⚠️ Error', err));
-            driverSocket.on('connect_error', (err) => log('driverLogs', '⚠️ Connect Error', err.message));
+            driverSocket.on('connect_error', (err) => {
+                log('driverLogs', '⚠️ Connect Error', err.message);
+                document.getElementById('driverStatus').innerText = 'Error: ' + err.message;
+                document.getElementById('driverStatus').className = 'status disconnected';
+            });
         }
 
         function updateLocation() {

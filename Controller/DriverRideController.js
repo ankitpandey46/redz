@@ -224,20 +224,28 @@ class DriverRideController extends BaseController {
         }
 
         const acceptedRide = await BookRideModel.acceptRide(rideId);
+        console.log(`Ride ${rideId} accepted by driver ${driverId}`);
         await DriverModel.updateStatus(driverId, 'BOOKED');
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'BOOKED');
 
-        const userData = await super.redis.client.hGetAll(`user:${ride.userId}`);
+        const userId = ride.userId;
+        const userData = await super.redis.client.hGetAll(`user:${userId}`);
+
+        console.log(`Retrieved User ${userId} from Redis. Socket ID: ${userData ? userData.socketId : 'NOT FOUND'}`);
+
         if (userData && userData.socketId && global.io) {
+            console.log(`Emitting rideAccepted to user ${userId} on socket ${userData.socketId}`);
             global.io.of("/user").to(userData.socketId).emit('rideAccepted', {
                 rideId: rideId,
                 status: "ACCEPTED",
                 driverId: driverId,
                 driverName: acceptedRide.driver.firstName + " " + acceptedRide.driver.lastName,
-                driverPhone: acceptedRide.driver.phone,
-                driverProfilePic: acceptedRide.driver.profilePic,
+                driverPhone: acceptedRide.driver.phoneNumber,
+                driverProfilePic: acceptedRide.driver.selfieImage,
                 message: "Your driver has accepted the ride!"
             });
+        } else {
+            console.log(`Could not notify user ${userId}: ${!userData ? 'No Redis data' : !userData.socketId ? 'No socketId' : 'io not initialized'}`);
         }
 
         return super.sendResponse(res, 200, 'success', 'Ride accepted successfully', { ride: acceptedRide });
