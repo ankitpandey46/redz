@@ -32,7 +32,6 @@ module.exports = (io, redis) => {
         console.log("User connected to /user namespace:", userId);
 
         try {
-            // Ensure values are strings for Redis hSet to prevent crashes
             await redis.hSet(`user:${userId}`, {
                 socketId: String(socket.id),
                 userId: String(userId),

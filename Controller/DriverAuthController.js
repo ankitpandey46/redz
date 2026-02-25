@@ -1,5 +1,6 @@
 const BaseController = require("./BaseController");
 const DriverModel = require("../Model/DriverModel");
+const DriverAuthenticationModel = require("../Model/DriverAuthenticationModel");
 const jwt = require("jsonwebtoken");
 
 const { driverSignupSchema, verifyOTPSchema, sendOTPSchema } = require("../validation/auth-validation");
@@ -62,7 +63,7 @@ class DriverAuthController extends BaseController {
 
             const { phoneNumber, countryCode } = data;
 
-            const result = await DriverModel.requestOTP(phoneNumber, countryCode);
+            const result = await DriverAuthenticationModel.requestOTP(phoneNumber, countryCode);
 
             if (result.error) {
                 return super.sendResponse(res, 404, "error", result.error);
@@ -88,7 +89,7 @@ class DriverAuthController extends BaseController {
 
             const { otp } = data;
 
-            const result = await DriverModel.verifyOTP(otp);
+            const result = await DriverAuthenticationModel.verifyOTP(otp);
 
             if (result.error) {
                 return super.sendResponse(res, 200, "error", result.error);
