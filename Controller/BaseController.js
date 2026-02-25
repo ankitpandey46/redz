@@ -22,6 +22,17 @@ class BaseController {
         }
         return res.status(statusCode).json(response);
     }
+
+    /**
+     * Standardized Validation Error response method
+     */
+    static sendValidationError(res, message) {
+        return res.status(200).json({
+            status: "error",
+            validationError: true,
+            message: message
+        });
+    }
 }
 
 module.exports = BaseController;

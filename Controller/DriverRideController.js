@@ -1,7 +1,7 @@
-const BaseController = require("./BaseController");
+const BaseController = require("@/Controller/BaseController");
 const DriverRideModel = require("@/Model/DriverRideModel");
 const asyncHandler = require('express-async-handler');
-const { locationSchema, searchNearbySchema, completeRideSchema, acceptRideSchema } = require("../validation/driverRideValidation");
+const { locationSchema, searchNearbySchema, completeRideSchema, acceptRideSchema } = require("@/validation/driverRideValidation");
 const DriverModel = require("@/Model/DriverModel");
 const BookRideModel = require("@/Model/BookRideModel");
 /**
@@ -16,7 +16,7 @@ class DriverRideController extends BaseController {
         const { error } = locationSchema.validate(data, { abortEarly: false });
         if (error) {
             const combinedMessage = error.details.map(detail => detail.message).join(", ");
-            return super.sendResponse(res, 400, 'error', combinedMessage);
+            return super.sendValidationError(res, combinedMessage);
         }
 
         const { lat, lng } = data;
@@ -154,7 +154,7 @@ class DriverRideController extends BaseController {
         const { error } = completeRideSchema.validate(data, { abortEarly: false });
         if (error) {
             const combinedMessage = error.details.map(detail => detail.message).join(", ");
-            return super.sendResponse(res, 400, 'error', combinedMessage);
+            return super.sendValidationError(res, combinedMessage);
         }
 
         const { rideId } = data;
@@ -205,7 +205,7 @@ class DriverRideController extends BaseController {
         const { error } = acceptRideSchema.validate(data, { abortEarly: false });
         if (error) {
             const combinedMessage = error.details.map(detail => detail.message).join(", ");
-            return super.sendResponse(res, 400, 'error', combinedMessage);
+            return super.sendValidationError(res, combinedMessage);
         }
 
         const { rideId } = data;

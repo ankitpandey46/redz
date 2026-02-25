@@ -12,7 +12,7 @@ class BookingController extends BaseController {
         const { error } = cancelRideSchema.validate(data, { abortEarly: false });
         if (error) {
             const combinedMessage = error.details.map(detail => detail.message).join(", ");
-            return super.sendResponse(res, 400, 'error', combinedMessage);
+            return super.sendValidationError(res, combinedMessage);
         }
 
         const { rideId, cancelledBy } = data;

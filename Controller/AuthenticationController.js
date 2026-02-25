@@ -1,7 +1,7 @@
-const BaseController = require("./BaseController");
+const BaseController = require("@/Controller/BaseController");
 const jwt = require("jsonwebtoken");
-const AuthenticationModel = require("../Model/AuthenticationModel");
-const { signupSchema, sendOTPSchema, verifyOTPSchema } = require("../validation/auth-validation");
+const AuthenticationModel = require("@/Model/AuthenticationModel");
+const { signupSchema, sendOTPSchema, verifyOTPSchema } = require("@/validation/auth-validation");
 
 class AuthenticationController extends BaseController {
 
@@ -11,11 +11,7 @@ class AuthenticationController extends BaseController {
       const { error } = signupSchema.validate(data, { abortEarly: false });
       if (error) {
         const combinedMessage = error.details.map(detail => detail.message).join(", ");
-        return res.status(200).json({
-          status: "error",
-          validationError: true,
-          message: combinedMessage
-        });
+        return super.sendValidationError(res, combinedMessage);
       }
       const result = await AuthenticationModel.signup(data);
       if (result.error) {
@@ -33,11 +29,7 @@ class AuthenticationController extends BaseController {
       if (error.name === "ValidationError") {
         const messages = Object.values(error.errors).map(val => val.message);
         const combinedMessage = messages.join(", ");
-        return res.status(200).json({
-          status: "error",
-          validationError: true,
-          message: combinedMessage
-        });
+        return super.sendValidationError(res, combinedMessage);
       }
       return res.status(500).json({
         status: "error",
@@ -53,11 +45,7 @@ class AuthenticationController extends BaseController {
       const { error } = sendOTPSchema.validate(data, { abortEarly: false });
       if (error) {
         const combinedMessage = error.details.map(detail => detail.message).join(", ");
-        return res.status(200).json({
-          status: "error",
-          validationError: true,
-          message: combinedMessage
-        });
+        return super.sendValidationError(res, combinedMessage);
       }
 
       const { phoneNumber, countryCode } = data;
@@ -82,11 +70,7 @@ class AuthenticationController extends BaseController {
         const messages = Object.values(error.errors).map(val => val.message);
         const combinedMessage = messages.join(", ");
 
-        return res.status(200).json({
-          status: "error",
-          validationError: true,
-          message: combinedMessage
-        });
+        return super.sendValidationError(res, combinedMessage);
       }
 
       return res.status(500).json({
@@ -103,11 +87,7 @@ class AuthenticationController extends BaseController {
       const { error } = verifyOTPSchema.validate(data, { abortEarly: false });
       if (error) {
         const combinedMessage = error.details.map(detail => detail.message).join(", ");
-        return res.status(200).json({
-          status: "error",
-          validationError: true,
-          message: combinedMessage
-        });
+        return super.sendValidationError(res, combinedMessage);
       }
 
       const { otp } = data;

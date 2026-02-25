@@ -11,6 +11,7 @@ const path = require("path");
 const userRoute = require("./routes/userRoute");
 const driverRoute = require("./routes/driverRoute");
 const bookingRoute = require("./routes/bookingRoute");
+const redisRoute = require("./routes/redisRoute");
 const prisma = require("./Utils/db");
 
 const app = express();
@@ -40,6 +41,7 @@ app.use(flash());
 
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use("/api/redis", redisRoute);
 app.use("/api", userRoute);
 app.use("/api/driver", driverRoute);
 app.use("/api/booking", bookingRoute);

@@ -1,9 +1,9 @@
-const BaseController = require("./BaseController");
-const DriverModel = require("../Model/DriverModel");
-const DriverAuthenticationModel = require("../Model/DriverAuthenticationModel");
+const BaseController = require("@/Controller/BaseController");
+const DriverModel = require("@/Model/DriverModel");
+const DriverAuthenticationModel = require("@/Model/DriverAuthenticationModel");
 const jwt = require("jsonwebtoken");
 
-const { driverSignupSchema, verifyOTPSchema, sendOTPSchema } = require("../validation/auth-validation");
+const { driverSignupSchema, verifyOTPSchema, sendOTPSchema } = require("@/validation/auth-validation");
 class DriverAuthController extends BaseController {
     static async signup(req, res) {
         try {
@@ -11,7 +11,7 @@ class DriverAuthController extends BaseController {
             const { error } = driverSignupSchema.validate(data, { abortEarly: false });
             if (error) {
                 const combinedMessage = error.details.map(detail => detail.message).join(", ");
-                return super.sendResponse(res, 400, 'error', combinedMessage);
+                return super.sendValidationError(res, combinedMessage);
             }
 
             if (!req.files || !req.files.nrcImage || !req.files.selfieImage || !req.files.policeClearanceImage) {
@@ -58,7 +58,7 @@ class DriverAuthController extends BaseController {
             const { error } = sendOTPSchema.validate(data, { abortEarly: false });
             if (error) {
                 const combinedMessage = error.details.map(detail => detail.message).join(", ");
-                return super.sendResponse(res, 400, 'error', combinedMessage);
+                return super.sendValidationError(res, combinedMessage);
             }
 
             const { phoneNumber, countryCode } = data;
@@ -84,7 +84,7 @@ class DriverAuthController extends BaseController {
             const { error } = verifyOTPSchema.validate(data, { abortEarly: false });
             if (error) {
                 const combinedMessage = error.details.map(detail => detail.message).join(", ");
-                return super.sendResponse(res, 200, "error", combinedMessage);
+                return super.sendValidationError(res, combinedMessage);
             }
 
             const { otp } = data;
