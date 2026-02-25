@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const { driverSignupSchema, verifyOTPSchema, sendOTPSchema } = require("@/validation/auth-validation");
 class DriverAuthController extends BaseController {
+
     static async signup(req, res) {
         try {
             const data = req.body;
@@ -38,13 +39,14 @@ class DriverAuthController extends BaseController {
                 vehicleColor: data.vehicleColor
             };
 
-            const result = await DriverModel.signup(driverData);
+            const result = await DriverAuthenticationModel.signup(driverData);
 
-            if (result.error) {
-                return super.sendResponse(res, 400, "error", result.error);
+            if (result.status === false) {
+                return super.sendResponse(res, 200, "error", result.error);
+            }else{
+                return super.sendResponse(res, 200, "success", "Driver registered successfully", result.driver);
             }
 
-            return super.sendResponse(res, 201, "success", "Driver registered successfully", result.driver);
 
         } catch (error) {
             console.error('Driver signup error:', error);

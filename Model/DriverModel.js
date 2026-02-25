@@ -1,16 +1,6 @@
 const BaseModel = require('./BaseModel');
 
 class DriverModel extends BaseModel {
-    static async signup(data) {
-        try {
-            const newDriver = await super.prisma.driver.create({
-                data: data
-            });
-            return { success: true, driver: newDriver };
-        } catch (error) {
-            return { error: error.message };
-        }
-    }
 
     static async findByUserId(userId) {
         return await super.prisma.driver.findUnique({
