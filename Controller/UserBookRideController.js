@@ -2,6 +2,7 @@ const BaseController = require("@/Controller/BaseController");
 const DriverRideController = require('@/Controller/DriverRideController')
 const asyncHandler = require('express-async-handler');
 const DriverModel = require("@/Model/DriverModel");
+const UserModel = require("@/Model/UserModel");
 
 const BookRideModel = require("@/Model/BookRideModel");
 const { requestRideSchema: userRequestRideSchema } = require("@/validation/userBookValidation");
