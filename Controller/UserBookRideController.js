@@ -93,7 +93,7 @@ class UserBookRideController extends BaseController {
                 rideId: ride.id,
                 userId: userId,
                 userName: userData.firstName + " " + userData.lastName,
-                userPhone: userData.phone,
+                userPhoneNumber: userData.phoneNumber,
                 userCountryCode: userData.countryCode,
                 userEmail: userData.email,
                 pickupLat,
