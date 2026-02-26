@@ -241,6 +241,8 @@ class DriverRideController extends BaseController {
                 driverId: driverId,
                 driverName: acceptedRide.driver.firstName + " " + acceptedRide.driver.lastName,
                 driverPhone: acceptedRide.driver.phoneNumber,
+                driverCountryCode: acceptedRide.driver.countryCode,
+                driverEmail: acceptedRide.driver.email,
                 driverProfilePic: acceptedRide.driver.selfieImage,
                 message: "Your driver has accepted the ride!"
             });

@@ -84,11 +84,17 @@ class UserBookRideController extends BaseController {
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'REQUESTED');
         await super.redis.client.zRem('drivers:locations', driverId.toString());
 
+        const userData = await UserModel.getUserById(userId);
+
         const socketId = driverRedisData.socketId;
         if (socketId && global.io) {
             global.io.to(socketId).emit('newRideRequest', {
                 rideId: ride.id,
                 userId: userId,
+                userName: userData.firstName + " " + userData.lastName,
+                userPhone: userData.phone,
+                userCountryCode: userData.countryCode,
+                userEmail: userData.email,
                 pickupLat,
                 pickupLng,
                 dropLat,

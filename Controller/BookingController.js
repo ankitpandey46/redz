@@ -40,6 +40,11 @@ class BookingController extends BaseController {
             if (driverData && driverData.socketId && global.io) {
                 global.io.to(driverData.socketId).emit('rideCancelled', {
                     rideId: rideId,
+                    userId: ride.userId,
+                    userName: ride.user.firstName + " " + ride.user.lastName,
+                    userPhone: ride.user.phoneNumber,
+                    userCountryCode: ride.user.countryCode,
+                    userEmail: ride.user.email,
                     message: `Ride ${rideId} has been cancelled by the user.`
                 });
             }
@@ -48,6 +53,12 @@ class BookingController extends BaseController {
             if (userData && userData.socketId && global.io) {
                 global.io.of("/user").to(userData.socketId).emit('rideCancelled', {
                     rideId: rideId,
+                    driverId: ride.driverId,
+                    driverName: ride.driver.firstName + " " + ride.driver.lastName,
+                    driverPhone: ride.driver.phoneNumber,
+                    driverCountryCode: ride.driver.countryCode,
+                    driverEmail: ride.driver.email,
+                    driverProfilePic: ride.driver.profileImage,
                     message: `Your ride ${rideId} has been cancelled by the driver.`
                 });
             }
