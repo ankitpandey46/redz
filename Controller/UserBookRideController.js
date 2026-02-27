@@ -2,6 +2,7 @@ const BaseController = require("@/Controller/BaseController");
 const DriverRideController = require('@/Controller/DriverRideController')
 const asyncHandler = require('express-async-handler');
 const DriverModel = require("@/Model/DriverModel");
+const UserModel = require("@/Model/UserModel");
 
 const BookRideModel = require("@/Model/BookRideModel");
 const { requestRideSchema: userRequestRideSchema } = require("@/validation/userBookValidation");
@@ -84,11 +85,17 @@ class UserBookRideController extends BaseController {
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'REQUESTED');
         await super.redis.client.zRem('drivers:locations', driverId.toString());
 
+        const userData = await UserModel.getUserById(userId);
+
         const socketId = driverRedisData.socketId;
         if (socketId && global.io) {
             global.io.to(socketId).emit('newRideRequest', {
                 rideId: ride.id,
                 userId: userId,
+                userName: userData.firstName + " " + userData.lastName,
+                userPhoneNumber: userData.phoneNumber,
+                userCountryCode: userData.countryCode,
+                userEmail: userData.email,
                 pickupLat,
                 pickupLng,
                 dropLat,
