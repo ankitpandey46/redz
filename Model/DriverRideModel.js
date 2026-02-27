@@ -6,17 +6,17 @@ class DriverRideModel extends BaseModel {
      */
     static async goOnline(driverId, lat, lng) {
         return await super.prisma.driverOnline.upsert({
-            where: { driveruserid: parseInt(driverId) },
+            where: { driverId: parseInt(driverId) },
             update: {
                 latitude: parseFloat(lat),
                 longitude: parseFloat(lng),
-                driverstatus: true
+                driverstatus: "AVAILABLE"
             },
             create: {
-                driveruserid: parseInt(driverId),
+                driverId: parseInt(driverId),
                 latitude: parseFloat(lat),
                 longitude: parseFloat(lng),
-                driverstatus: true
+                driverstatus: "AVAILABLE"
             }
         });
     }

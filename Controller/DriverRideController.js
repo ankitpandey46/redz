@@ -22,7 +22,10 @@ class DriverRideController extends BaseController {
         const { lat, lng } = data;
         const latitude = parseFloat(lat);
         const longitude = parseFloat(lng);
-
+        const driver = await DriverModel.findByDriverId(driverId);
+        if (!driver) {
+            return super.sendResponse(res, 200, 'error', 'Driver not found');
+        }
         await DriverRideModel.goOnline(driverId, latitude, longitude);
         await super.redis.client.hSet(`driver:${driverId}`, {
             latitude: latitude,
@@ -173,7 +176,7 @@ class DriverRideController extends BaseController {
 
         const completedRide = await BookRideModel.completeRide(rideId);
 
-        await DriverModel.updateStatus(driverId, 'AVAILABLE');
+        await DriverModel.updateDriverStatus(driverId, 'AVAILABLE');
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'AVAILABLE');
 
         await super.redis.client.geoAdd('drivers:locations', [
@@ -225,7 +228,7 @@ class DriverRideController extends BaseController {
 
         const acceptedRide = await BookRideModel.acceptRide(rideId);
         console.log(`Ride ${rideId} accepted by driver ${driverId}`);
-        await DriverModel.updateStatus(driverId, 'BOOKED');
+        await DriverModel.updateDriverStatus(driverId, 'BOOKED');
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'BOOKED');
 
         const userId = ride.userId;

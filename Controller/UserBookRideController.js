@@ -80,7 +80,7 @@ class UserBookRideController extends BaseController {
         });
 
         // 3. Update Driver Status to 'Booked' (DB & Redis)
-        await DriverModel.updateStatus(driverId, 'REQUESTED');
+        await DriverModel.updateDriverStatus(driverId, 'REQUESTED');
         await super.redis.client.hSet(`driver:${driverId}`, 'status', 'REQUESTED');
         await super.redis.client.zRem('drivers:locations', driverId.toString());
 

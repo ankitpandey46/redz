@@ -69,7 +69,7 @@ class DriverAuthenticationModel extends BaseModel {
         });
 
         await super.prisma.driverOTP.deleteMany({
-            where: { id: otpRecord.id }
+            where: { phoneNumber: otpRecord.phoneNumber }
         });
 
         return { success: true, driver: driver };

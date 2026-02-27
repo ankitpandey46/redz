@@ -53,7 +53,7 @@ class BookingController extends BaseController {
             }
         }
 
-        await DriverModel.updateStatus(ride.driverId, 'AVAILABLE');
+        await DriverModel.updateDriverStatus(ride.driverId, 'AVAILABLE');
         await super.redis.client.hSet(`driver:${ride.driverId}`, 'status', 'AVAILABLE');
         await super.redis.client.geoAdd('drivers:locations', [
             {
