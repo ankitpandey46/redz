@@ -19,8 +19,8 @@ class DriverModel extends BaseModel {
     }
 
     static async updateDriverStatus(id, status) {
-        return await super.prisma.driver.update({
-            where: { id: parseInt(id) },
+        return await super.prisma.driverOnline.update({
+            where: { driverId: parseInt(id) },
             data: { driverstatus: status }
         });
     }
