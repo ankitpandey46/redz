@@ -1,5 +1,4 @@
 const BaseController = require("@/Controller/BaseController");
-const DriverModel = require("@/Model/DriverModel");
 const DriverAuthenticationModel = require("@/Model/DriverAuthenticationModel");
 const jwt = require("jsonwebtoken");
 
@@ -43,7 +42,7 @@ class DriverAuthController extends BaseController {
 
             if (result.status === false) {
                 return super.sendResponse(res, 200, "error", result.error);
-            }else{
+            } else {
                 return super.sendResponse(res, 200, "success", "Driver registered successfully", result.driver);
             }
 
@@ -99,7 +98,7 @@ class DriverAuthController extends BaseController {
 
             const driver = result.driver;
             const token = jwt.sign(
-                { email: driver.email, id: driver.id, driverId: driver.driverId },
+                { email: driver.email, id: driver.id },
                 process.env.JWT_SECRET,
                 { expiresIn: "24h" }
             );

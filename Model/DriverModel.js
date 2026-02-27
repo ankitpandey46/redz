@@ -2,12 +2,6 @@ const BaseModel = require('./BaseModel');
 
 class DriverModel extends BaseModel {
 
-    static async findByDriverId(driverId) {
-        return await super.prisma.driver.findUnique({
-            where: { driverId: driverId }
-        });
-    }
-
     static async findById(id) {
         return await super.prisma.driver.findUnique({
             where: { id: parseInt(id) }

@@ -22,7 +22,7 @@ class DriverRideController extends BaseController {
         const { lat, lng } = data;
         const latitude = parseFloat(lat);
         const longitude = parseFloat(lng);
-        const driver = await DriverModel.findByDriverId(driverId);
+        const driver = await DriverModel.findById(driverId);
         if (!driver) {
             return super.sendResponse(res, 200, 'error', 'Driver not found');
         }

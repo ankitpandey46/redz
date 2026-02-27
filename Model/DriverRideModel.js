@@ -23,7 +23,7 @@ class DriverRideModel extends BaseModel {
 
     static async goOffline(driverId) {
         return await super.prisma.driverOnline.deleteMany({
-            where: { driveruserid: parseInt(driverId) }
+            where: { driverId: parseInt(driverId) }
         });
     }
 }
