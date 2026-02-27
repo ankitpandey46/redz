@@ -71,7 +71,7 @@ model Driver {
 
 model DriverOnline {
   id           Int      @id @default(autoincrement())
-  driverId     Int     
+  driverId     Int     @unique 
   latitude     Float
   longitude    Float
   driverstatus String  
